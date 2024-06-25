@@ -1,2 +1,2 @@
-# budget-visualizer-app
+# Expendi App
  
