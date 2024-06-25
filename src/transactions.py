@@ -1,6 +1,8 @@
 import streamlit as st
+import pandas as pd
 from .firebase_auth import *
 import time
+
 
 auth, db = get_config()
 def get_transactions_data():
@@ -31,5 +33,26 @@ def insert_transaction():
         })
 
         st.success("Transaction inserted successfully!")
+        time.sleep(2)
+        st.rerun()
+
+@st.experimental_dialog("Remove Transaction")
+def remove_transaction():
+
+    transactions = pd.DataFrame(get_transactions_data()).transpose()
+
+    selectedTransactionsDict = st.dataframe(transactions, on_select="rerun", selection_mode="multi-row", hide_index=True)
+
+    transactionsList = selectedTransactionsDict.selection.rows
+    filtered_df = transactions.iloc[transactionsList]
+
+    st.write("You selected {} rows".format(len(filtered_df)))
+
+    if st.button("Submit"):
+
+        for index, row in filtered_df.iterrows():
+            db.child("transactions").child(st.session_state.uid).child(index).remove()
+
+        st.success("Transaction(s) removed successfully!")
         time.sleep(2)
         st.rerun()

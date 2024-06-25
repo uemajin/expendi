@@ -1,8 +1,12 @@
 import streamlit as st
-from src import get_config
+from src import get_config, get_menu
 import time
 
 auth, db = get_config()
+
+get_menu()
+
+st.title("Sign Up") 
 
 with st.form(key='signup_form'):
     fullname = st.text_input("Full Name")
