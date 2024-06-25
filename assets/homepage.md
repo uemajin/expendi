@@ -34,7 +34,7 @@ Expendi is tailored for simplicity and accessibility:
 
 ## How to Use Expendi
 
-1. **Visit Expendi:** Go to [expendiapp.com](https://expendiapp.com) from any web browser.
+1. **Visit Expendi:** Go to [expendi.streamlit.app](https://expendi.streamlit.app/) from any web browser.
   
 2. **Create Your Account:** Sign up for free and set up your personal profile.
   
@@ -42,7 +42,7 @@ Expendi is tailored for simplicity and accessibility:
 
 ## Get Support
 
-Have questions or need assistance? Reach out to our support team at [support@expendiapp.com](mailto:support@expendiapp.com).
+Have questions or need assistance? Reach out to support [here!](mailto:uemajin@outlook.com).
 
 ---
 
