@@ -37,7 +37,9 @@ else:
                     category_group = category_group.groupby(['category', 'type', 'name'])['amount'].sum().reset_index()
 
                     # Calculate percentage values
-                    category_group['percentage'] = category_group.groupby('type')['amount'].apply(lambda x: 100 * x / x.sum())
+                    #category_group['percentage'] = category_group.groupby('type')['amount'].apply(lambda x: 100 * x / x.sum())
+                    category_group['percentage'] = category_group.groupby('type')['amount'].transform(lambda x: 100 * x / x.sum())
+
 
                     colors = {'income': 'green', 'expense': 'red'}
 
