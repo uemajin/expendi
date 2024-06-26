@@ -5,6 +5,13 @@ import time
 
 auth, db = get_config()
 
+st.set_page_config(
+        page_title="Expendi",
+        page_icon='💸',
+        layout="centered",
+        initial_sidebar_state="collapsed"
+    )
+
 get_menu()
 
 st.title("Login")

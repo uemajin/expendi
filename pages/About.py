@@ -1,18 +1,39 @@
 import streamlit as st
+from st_social_media_links import SocialMediaIcons
 
 from src import *
+
+st.set_page_config(
+        page_title="Expendi",
+        page_icon='💸',
+        layout="centered"
+    )
 
 get_menu()
 
 st.title("About")
 
+social_media_icons = SocialMediaIcons(
+    [
+        "https://www.linkedin.com/in/jin-uema/",
+        "https://github.com/uemajin"
+    ],
+    [
+        "grey",
+        "grey"
+    ]
+)
+
 c1, c2 = st.columns([1, 9]) 
 
-c1.image("https://i.ibb.co/c3cPDm4/Captura-de-Tela-2024-06-25-a-s-14-48-27-modified-1.png", use_column_width=True)
+with c1:
+    c1.image("https://i.ibb.co/c3cPDm4/Captura-de-Tela-2024-06-25-a-s-14-48-27-modified-1.png", use_column_width=True)
+    social_media_icons.render()
 
 c2.write("""Hello my name is Jin and I am a Data scientist and software developer. I am currently enrolled in a MBA of Data Science and Analytics at the University of São Paulo (USP) and I am passionate about technology, specially things that can make my life easier 😅.
-             I am always looking for new challenges and opportunities to learn and improve my skills. I am currently working on a project called Expendi, which is a personal finance management application.
+             I am currently working on a project called Expendi, which is a personal finance management application.
              This project was developed using Python, Streamlit, Firebase and Plotly. I hope you enjoy it!""")
+
 
 st.markdown("---")
 

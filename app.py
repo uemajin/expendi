@@ -4,6 +4,12 @@ import pandas as pd
 import plotly.express as px
 from datetime import datetime as dt
 
+st.set_page_config(
+        page_title="Expendi",
+        page_icon='💸',
+        layout="wide"
+    )
+
 get_menu()
 
 if not st.session_state.get('role'):
@@ -27,6 +33,8 @@ else:
                 data['amount'] = data['amount'].astype(float).apply(lambda x: '{:.2f}'.format(x))
                 dataf = data.head(10).sort_values(by='date', ascending=False).style.applymap(bgcolor_positive_or_negative, subset=['amount'])
                 
+
+
                 col1, col2 = st.columns([2.5, 1.25])
 
                 with col1: 
@@ -83,8 +91,17 @@ else:
             
             else:
                 
+                # Filter Transactions
+
+                if colFilters.button("Insert new Transaction"):
+                    insert_transaction()
+
+                if colFilters.button("Remove Transaction"):    
+                    remove_transaction()
+
                 colFilters.write("Filter Transactions")
                 date_filter = colFilters.date_input("Select your date range", value=(dt.strptime(data['date'].min(),'%Y-%m-%d'), dt.strptime(data['date'].max(),'%Y-%m-%d')), key='start_date')
+                category_filter = colFilters.multiselect("Select the category of transaction", data['category'].unique(), key='category_filter')
                 
                 # Convert date_filter to datetime objects
                 start_date = dt.combine(date_filter[0], dt.min.time())
@@ -93,36 +110,67 @@ else:
                 except IndexError:
                     end_date = dt.combine(date_filter[0], dt.max.time()) 
 
+                start_date_previous_peiod = start_date - pd.DateOffset(months=1)
+                end_date_previous_peiod = end_date - pd.DateOffset(months=1)
+
                 data['date'] = pd.to_datetime(data['date'])
 
                 # Filter data DataFrame based on date range
                 filtered_data = data[(data['date'] >= start_date) & (data['date'] <= end_date)]
 
+                # Filter data DataFrame based on category
+                if category_filter:
+                    filtered_data = filtered_data[filtered_data['category'].isin(category_filter)]
+
                 filtered_data['amount'] = filtered_data['amount'].astype(float).apply(lambda x: '{:.2f}'.format(x))
-                dataf = filtered_data.sort_values(by='date', ascending=False).style.applymap(bgcolor_positive_or_negative, subset=['amount'])
-                colTransactions.dataframe(dataf, hide_index=True)
+
+                filtered_data = filtered_data[['name', 'amount', 'category', 'date', 'type']]
+                filtered_data = filtered_data.set_index('date')
+
+                filtered_data_previous_period = data[(data['date'] >= start_date_previous_peiod) & (data['date'] <= end_date_previous_peiod)]
+
+                colTransactions.dataframe(filtered_data.sort_index(ascending=False),
+                                        hide_index=True,
+                                        column_order=('date', 'name', 'category', 'type', 'amount'),
+                                        column_config={
+                                            "name": st.column_config.TextColumn(
+                                            "Transaction",
+                                            help="The name of the transaction"
+                                            ),
+                                            "amount": st.column_config.NumberColumn(
+                                            "Amount",
+                                            help="The price of the transaction",
+                                            format="%.2f",
+                                            ),
+                                            "category": st.column_config.TextColumn(
+                                            "Category",
+                                            help="The category of the transaction"
+                                            ),
+                                            "date": st.column_config.DateColumn(
+                                            "Date",
+                                            help="The date of the transaction",
+                                            format="YYYY-MM-DD",
+                                            step=1
+                                            ),
+                                            "type": st.column_config.TextColumn(
+                                            "Type",
+                                            help="The type of the transaction"
+                                            )
+                                            }
+                                        , use_container_width=True
+                                        
+                                        )
 
                 # KPIs
 
                 totalIncome = filtered_data[filtered_data['type'] == 'income']['amount'].astype(float).sum()
-                colKPIs.metric("Total Income", totalIncome)
+                totalIncomeLastPeriod = filtered_data_previous_period[filtered_data_previous_period['type'] == 'income']['amount'].astype(float).sum()
+                colKPIs.metric("Total Income", str(totalIncome) + '$', str(totalIncome - totalIncomeLastPeriod) + '$ vs last period')
 
                 totalExpense = filtered_data[filtered_data['type'] == 'expense']['amount'].astype(float).sum()
-                colKPIs.metric("Total Expense", totalExpense)
+                totalExpenseLastPeriod = filtered_data_previous_period[filtered_data_previous_period['type'] == 'expense']['amount'].astype(float).sum()
+                colKPIs.metric("Total Expense", str(totalExpense) + '$',str(totalExpense - totalExpenseLastPeriod) + '$ vs last period')
 
                 totalAmount = filtered_data['amount'].astype(float).sum()
-                colKPIs.metric("Total Amount", totalAmount)
-
-        # Transactions Menu
-
-        t1, t2, t3, t4, t5, t6 = st.columns(6)
-
-        if t1.button("Insert new Transaction"):
-            insert_transaction()
-
-        if t2.button("Remove Transaction"):
-            remove_transaction()
-
-
-        
-        #transactions = db.child("transactions").child(st.session_state.uid).get().val()
+                totalAmountLastPeriod = filtered_data_previous_period['amount'].astype(float).sum()
+                colKPIs.metric("Total Amount", str(totalAmount) + '$', str(totalAmount - totalAmountLastPeriod) + '$ vs last period')
