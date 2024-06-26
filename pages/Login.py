@@ -1,9 +1,12 @@
 import streamlit as st
 from requests.exceptions import HTTPError
-from src import get_config, get_menu, forgot_password
+from src import *
 import time
 
-auth, db = get_config()
+
+auth = getFirebaseAuth()
+db = getFirebaseDB()
+storage = getFirebaseStorage()
 
 st.set_page_config(
         page_title="Expendi",
@@ -35,6 +38,7 @@ with st.form(key='login_form'):
                 st.session_state.role = user_data['role']
                 st.session_state.user = user_data['fullname']
                 st.session_state.uid = user['localId']
+                st.session_state.img_link = user_data['profile_img']
 
                 time.sleep(2)
                 st.switch_page("app.py")

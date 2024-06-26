@@ -2,7 +2,7 @@ import streamlit as st
 from .firebase_auth import *
 import time
 
-auth, db = get_config()
+auth = getFirebaseAuth()
 
 @st.experimental_dialog("Forgot Password")
 def forgot_password():

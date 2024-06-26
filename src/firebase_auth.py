@@ -10,10 +10,13 @@ config = {
   'appId': "1:372530184676:web:400496c064c1d42e19c7f1"
 }
 
-def get_config():
+firebase = pyrebase.initialize_app(config)
 
-    firebase = pyrebase.initialize_app(config)
-    auth = firebase.auth()
-    db = firebase.database()
+def getFirebaseAuth(firebase=firebase):
+    return firebase.auth()
 
-    return auth, db
+def getFirebaseDB(firebase=firebase):
+    return firebase.database()
+
+def getFirebaseStorage(firebase=firebase):
+    return firebase.storage()

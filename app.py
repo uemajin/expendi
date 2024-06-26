@@ -19,7 +19,7 @@ if not st.session_state.get('role'):
     st.markdown(data.decode(), unsafe_allow_html=True)
 
 else:
-    if st.session_state.role == 'user':
+    if st.session_state.role == 'user' or st.session_state.role == 'admin':
 
         tabMainDashboard, tabAllTransactions= st.tabs(["Main Dashboard", "All Transactions"])
 
@@ -28,11 +28,22 @@ else:
 
             if data.empty:
                 st.write("No transactions found. Please insert a new transaction.")
+
+                c1, c2, c3 = st.columns([3, 1, 1])
+
+                with c3:
+                    if st.button("Insert new Transaction", key='insert_transaction_p1'):
+                        insert_transaction()
+                    
+
             
             else:
                 data['amount'] = data['amount'].astype(float).apply(lambda x: '{:.2f}'.format(x))
-                dataf = data.head(10).sort_values(by='date', ascending=False).style.applymap(bgcolor_positive_or_negative, subset=['amount'])
-                
+                dataf = (data.head(10)
+                        .sort_values(by='date', ascending=False)
+                        .style
+                        .apply(lambda row: [bgcolor_positive_or_negative(cell) for cell in row], subset=['amount'])
+)
 
 
                 col1, col2 = st.columns([2.5, 1.25])
@@ -49,7 +60,7 @@ else:
                     category_group['percentage'] = category_group.groupby('type')['amount'].transform(lambda x: 100 * x / x.sum())
 
 
-                    colors = {'income': 'green', 'expense': 'red'}
+                    colors = {'Income': 'green', 'Expense': 'red'}
 
                     fig = px.sunburst(category_group,
                                     title='Expenses by Category',
@@ -88,6 +99,12 @@ else:
 
             if data.empty:
                 st.write("No transactions found. Please insert a new transaction.")
+
+                c1, c2, c3 = st.columns([3, 1, 1])
+
+                with c3:
+                    if st.button("Insert new Transaction", key='insert_transaction_p2'):
+                        insert_transaction()
             
             else:
                 
@@ -95,6 +112,9 @@ else:
 
                 if colFilters.button("Insert new Transaction"):
                     insert_transaction()
+
+                if colFilters.button("Edit Transaction"):
+                    edit_transaction()
 
                 if colFilters.button("Remove Transaction"):    
                     remove_transaction()
@@ -163,14 +183,14 @@ else:
 
                 # KPIs
 
-                totalIncome = filtered_data[filtered_data['type'] == 'income']['amount'].astype(float).sum()
-                totalIncomeLastPeriod = filtered_data_previous_period[filtered_data_previous_period['type'] == 'income']['amount'].astype(float).sum()
-                colKPIs.metric("Total Income", str(totalIncome) + '$', str(totalIncome - totalIncomeLastPeriod) + '$ vs last period')
+                totalIncome = filtered_data[filtered_data['type'] == 'Income']['amount'].astype(float).sum()
+                totalIncomeLastPeriod = filtered_data_previous_period[filtered_data_previous_period['type'] == 'Income']['amount'].astype(float).sum()
+                colKPIs.metric("Total Income", str(round(totalIncome, 2)) + '$', str(round(totalIncome - totalIncomeLastPeriod, 2)) + '$ vs last period')
 
-                totalExpense = filtered_data[filtered_data['type'] == 'expense']['amount'].astype(float).sum()
-                totalExpenseLastPeriod = filtered_data_previous_period[filtered_data_previous_period['type'] == 'expense']['amount'].astype(float).sum()
-                colKPIs.metric("Total Expense", str(totalExpense) + '$',str(totalExpense - totalExpenseLastPeriod) + '$ vs last period')
+                totalExpense = filtered_data[filtered_data['type'] == 'Expense']['amount'].astype(float).sum()
+                totalExpenseLastPeriod = filtered_data_previous_period[filtered_data_previous_period['type'] == 'Expense']['amount'].astype(float).sum()
+                colKPIs.metric("Total Expense", str(round(totalExpense, 2)) + '$',str(round(totalExpense - totalExpenseLastPeriod, 2)) + '$ vs last period')
 
                 totalAmount = filtered_data['amount'].astype(float).sum()
                 totalAmountLastPeriod = filtered_data_previous_period['amount'].astype(float).sum()
-                colKPIs.metric("Total Amount", str(totalAmount) + '$', str(totalAmount - totalAmountLastPeriod) + '$ vs last period')
+                colKPIs.metric("Total Amount", str(round(totalAmount, 2)) + '$', str(round(totalAmount - totalAmountLastPeriod, 2)) + '$ vs last period')
