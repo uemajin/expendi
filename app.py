@@ -1,8 +1,11 @@
-from src import *
-
 import pandas as pd
 import plotly.express as px
 from datetime import datetime as dt
+
+from src import *
+
+
+db = Database()
 
 st.set_page_config(
         page_title="Expendi",
@@ -12,19 +15,20 @@ st.set_page_config(
 
 get_menu()
 
-if not st.session_state.get('role'):
+if not st.session_state.get('user_id'):
     with open("assets/homepage.md", "rb") as f:
         data = f.read()
 
     st.markdown(data.decode(), unsafe_allow_html=True)
 
 else:
-    if st.session_state.role == 'user' or st.session_state.role == 'admin':
+    if st.session_state.user_id:
 
         tabMainDashboard, tabAllTransactions= st.tabs(["Main Dashboard", "All Transactions"])
 
+        data = db.load_transactions(st.session_state.user_id)
+
         with tabMainDashboard:
-            data = pd.DataFrame(get_transactions_data()).transpose().reset_index(drop=True)
 
             if data.empty:
                 st.write("No transactions found. Please insert a new transaction.")
@@ -34,9 +38,9 @@ else:
                 with c3:
                     if st.button("Insert new Transaction", key='insert_transaction_p1'):
                         insert_transaction()
-                    
 
-            
+
+
             else:
                 data['amount'] = data['amount'].astype(float).apply(lambda x: '{:.2f}'.format(x))
                 dataf = (data.head(10)
@@ -48,7 +52,7 @@ else:
 
                 col1, col2 = st.columns([2.5, 1.25])
 
-                with col1: 
+                with col1:
                     # Group by category and sum the amounts
                     #data['amount'] = data['amount'].astype(float)
                     category_group = data.copy()
@@ -68,17 +72,17 @@ else:
                                     values='amount', color='type',
                                     color_discrete_map=colors,
                                     custom_data=['percentage'],)
-                    
+
                     # Update hover template to show percentage
                     fig.update_traces(hovertemplate='<b>%{label}</b><br>%{parent}: %{value} (%{customdata[0]:.2f}%)')
 
                     st.plotly_chart(fig, theme=None)
-                    
+
 
                 with col2:
                     st.write("Last Transactions")
                     st.dataframe(dataf,
-                                column_order=('name', 'amount'), 
+                                column_order=('name', 'amount'),
                                 column_config={
                                             "name": st.column_config.TextColumn(
                                             "Transaction",
@@ -95,7 +99,6 @@ else:
         with tabAllTransactions:
 
             colTransactions, colKPIs, colFilters = st.columns([3, 1, 1])
-            data = pd.DataFrame(get_transactions_data()).transpose().reset_index(drop=True)
 
             if data.empty:
                 st.write("No transactions found. Please insert a new transaction.")
@@ -105,9 +108,9 @@ else:
                 with c3:
                     if st.button("Insert new Transaction", key='insert_transaction_p2'):
                         insert_transaction()
-            
+
             else:
-                
+
                 # Filter Transactions
 
                 if colFilters.button("Insert new Transaction"):
@@ -116,19 +119,19 @@ else:
                 if colFilters.button("Edit Transaction"):
                     edit_transaction()
 
-                if colFilters.button("Remove Transaction"):    
+                if colFilters.button("Remove Transaction"):
                     remove_transaction()
 
                 colFilters.write("Filter Transactions")
                 date_filter = colFilters.date_input("Select your date range", value=(dt.strptime(data['date'].min(),'%Y-%m-%d'), dt.strptime(data['date'].max(),'%Y-%m-%d')), key='start_date')
                 category_filter = colFilters.multiselect("Select the category of transaction", data['category'].unique(), key='category_filter')
-                
+
                 # Convert date_filter to datetime objects
                 start_date = dt.combine(date_filter[0], dt.min.time())
                 try:
                     end_date = dt.combine(date_filter[1], dt.min.time())
                 except IndexError:
-                    end_date = dt.combine(date_filter[0], dt.max.time()) 
+                    end_date = dt.combine(date_filter[0], dt.max.time())
 
                 start_date_previous_peiod = start_date - pd.DateOffset(months=1)
                 end_date_previous_peiod = end_date - pd.DateOffset(months=1)
@@ -178,7 +181,7 @@ else:
                                             )
                                             }
                                         , use_container_width=True
-                                        
+
                                         )
 
                 # KPIs

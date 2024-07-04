@@ -1,16 +1,72 @@
+import time
 import streamlit as st
 import pandas as pd
 import numpy as np
-from .firebase_auth import *
-import time
 
-auth = getFirebaseAuth()
-db = getFirebaseDB()
-storage = getFirebaseStorage()
+from src.helper import *
+from .database import *
 
-def get_transactions_data():
-    transactions = db.child("transactions").child(st.session_state.uid).get().val()
-    return transactions
+db = Database()
+
+@st.experimental_dialog("Create Profile")
+def create_profile():
+    with st.form(key="create_profile_form"):
+        username = st.text_input("Username:")
+        fullname = st.text_input("Full Name:")
+        profile_img = st.file_uploader("Profile Image", type=["png", "jpg", "jpeg", "gif"])
+
+        if profile_img:
+            process_image(profile_img, username)
+
+        else:
+            process_image("assets/images/default.png", username)
+
+        if st.form_submit_button("Create Profile"):
+            db.create_user_profile(username, fullname)
+            st.success("Profile created successfully!")
+            time.sleep(2)
+            st.rerun()
+
+@st.experimental_dialog("Edit Profile")
+def edit_profile(user):
+    with st.form(key="edit_profile_form"):
+
+        c1, c2 = st.columns([1, 1.8])
+        username = c2.text_input("Username:", value=user[1])
+        fullname = c2.text_input("Full Name:", value=user[2])
+        profile_img = c1.image(load_user_profile_image_local(username), use_column_width=True)
+
+        new_profile_img = st.file_uploader("Profile Image", type=["png", "jpg", "jpeg", "gif"])
+
+        enable_delete = st.checkbox("Enable Profile Delete", value=st.session_state.get("delete_enabled_" + username, False))
+
+        st.session_state["delete_enabled_" + username] = True if enable_delete else False
+
+        if new_profile_img:
+            process_image(new_profile_img, username)
+
+        c1, c2, c3 = st.columns([1, 2.9, 1])
+
+        if st.form_submit_button("Update"):
+            st.write("Updating profile...")
+            db.update_user_profile(user[0], username, fullname)
+            st.success("Profile updated successfully!")
+            time.sleep(2)
+            st.rerun()
+
+@st.experimental_dialog("Delete Profile")
+def delete_profile(user):
+    st.write("Are you sure you want to delete your profile?")
+
+    c1, c2, c3 = st.columns([1, 5.5, 1])
+    if c1.button("Yes"):
+        db.delete_user_profile(user[0])
+        st.success("Profile deleted successfully!")
+        time.sleep(2)
+        st.rerun()
+
+    if c3.button("No"):
+        st.rerun()
 
 @st.experimental_dialog("Insert Transaction")
 def insert_transaction():
@@ -27,13 +83,7 @@ def insert_transaction():
 
     if st.button("Submit"):
 
-        db.child("transactions").child(st.session_state.uid).push({
-            "name": transaction_name,
-            "amount": amount,
-            "date": str(date),
-            "category": category,
-            "type": transaction_type
-        })
+        db.insert_transaction(st.session_state.user_id, transaction_name, amount, date, category, transaction_type)
 
         st.success("Transaction inserted successfully!")
         time.sleep(2)
@@ -42,9 +92,8 @@ def insert_transaction():
 @st.experimental_dialog("Remove Transaction")
 def remove_transaction():
 
-    transactions = pd.DataFrame(get_transactions_data()).transpose()
-
-    selectedTransactionsDict = st.dataframe(transactions, on_select="rerun", selection_mode="multi-row", hide_index=True)
+    transactions = db.load_transactions(st.session_state.user_id)
+    selectedTransactionsDict = st.dataframe(transactions, column_order=('date', 'name', 'category', 'type', 'amount'), on_select="rerun", selection_mode="multi-row", hide_index=True)
 
     transactionsList = selectedTransactionsDict.selection.rows
     filtered_df = transactions.iloc[transactionsList]
@@ -54,7 +103,8 @@ def remove_transaction():
     if st.button("Submit"):
 
         for index, row in filtered_df.iterrows():
-            db.child("transactions").child(st.session_state.uid).child(index).remove()
+
+            db.delete_transaction(row['transaction_id'])
 
         st.success("Transaction(s) removed successfully!")
         time.sleep(2)
@@ -62,7 +112,7 @@ def remove_transaction():
 
 @st.experimental_dialog("Edit Transaction")
 def edit_transaction():
-    transactions = pd.DataFrame(get_transactions_data()).transpose()
+    transactions = db.load_transactions(st.session_state.user_id)
     transactions['date'] = pd.to_datetime(transactions['date'])
 
     st.write("Edit transactions")
@@ -119,7 +169,8 @@ def edit_transaction():
         for index, row in updated_data.iterrows():
             row_dict = row.to_dict()
             row_dict['date'] = row_dict['date'].strftime('%Y-%m-%d')  # Convert Timestamp to string
-            db.child("transactions").child(st.session_state.uid).child(index).update(row_dict)
+
+            db.update_transaction(st.session_state.user_id, row_dict['transaction_id'], row_dict['name'], row_dict['amount'], row_dict['date'], row_dict['category'], row_dict['type'])
 
         st.success("Transaction(s) edited successfully!")
         time.sleep(2)

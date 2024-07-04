@@ -1,4 +1,5 @@
 import streamlit as st
+
 from src import *
 
 st.set_page_config(
