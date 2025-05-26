@@ -1,9 +1,8 @@
 import streamlit as st
 
-from src.helper import load_user_profile_image_local
-
 def generate_unlogged_menu():
-    st.logo("assets/images/logo.png")
+
+    st.logo(f"assets/images/logo.png")
     st.sidebar.page_link("app.py", label="🏠 Home")
     st.sidebar.write("Please select a profile to access the dashboard.")
     st.sidebar.page_link("pages/Profiles.py", label="👤 Profiles")
@@ -14,8 +13,8 @@ def generate_user_menu():
 
     with st.sidebar:
         c1, c2 = st.columns([1, 3])
-        c1.image(load_user_profile_image_local(st.session_state.user))
-        c2.markdown("#### Welcome, " + st.session_state.user)
+        c1.image(st.session_state.user_photo)
+        c2.markdown("#### Welcome, " + st.session_state.full_name + "!")
     st.sidebar.page_link("app.py", label="🏠 Home")
     if st.sidebar.button("Log Out"):
         st.session_state.clear()

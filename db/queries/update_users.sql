@@ -2,6 +2,7 @@ UPDATE
     users
 SET
     username = ?,
-    fullname = ?
+    fullname = ?,
+    photo = ?
 WHERE
     id = ?

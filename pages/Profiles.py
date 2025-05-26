@@ -34,16 +34,12 @@ if 'user_id' not in st.session_state:
 
             c1, c2 = container.columns([3, 6])
 
-            c1.image(load_user_profile_image_local(user[1]), use_column_width=True)
+            c1.image(user[5], use_container_width=True)
             c2.markdown("### " + user[1])
 
             c1, c2, c3 = container.columns([1, 1, 1])
             if c1.button("Log in here", key=user[1]):
-                st.session_state.user = user[1]
-                st.session_state.full_name = user[2]
-                st.session_state.img = load_user_profile_image_local(user[1])
-                st.session_state.user_id = user[0]
-                st.switch_page("app.py")
+                login(user)
 
             if c2.button("Edit Profile", key='edit_profile_' + user[1]):
                 edit_profile(user)

@@ -3,38 +3,86 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
+import bcrypt
+
 from src.helper import *
 from .database import *
 
 db = Database()
 
-@st.experimental_dialog("Create Profile")
+@st.dialog("Create Profile")
 def create_profile():
     with st.form(key="create_profile_form"):
         username = st.text_input("Username:")
         fullname = st.text_input("Full Name:")
+        password = st.text_input("Password:", type="password")
+        password_confirm = st.text_input("Confirm Password:", type="password")
         profile_img = st.file_uploader("Profile Image", type=["png", "jpg", "jpeg", "gif"])
 
-        if profile_img:
-            process_image(profile_img, username)
+        submit_button = st.form_submit_button("Create Profile")
+        if submit_button:
 
-        else:
-            process_image("assets/images/default.png", username)
+            if not username:
+                st.warning("Username is required.")
+                return
+            if not fullname:
+                st.warning("Full Name is required.")
+                return
+            if not password:
+                st.warning("Password is required.")
+                return
+            if password != password_confirm:
+                st.warning("Passwords do not match.")
+                return
+            
+            if db.check_user_exists(username):
+                st.warning("Username already exists. Please choose a different username.")
+                return
+            
+            if not profile_img:
+                profile_img = "assets/images/default.png"
 
-        if st.form_submit_button("Create Profile"):
-            db.create_user_profile(username, fullname)
+            db.create_user_profile(username, fullname, password, profile_img)
             st.success("Profile created successfully!")
             time.sleep(2)
             st.rerun()
 
-@st.experimental_dialog("Edit Profile")
+@st.dialog("Log In")
+def login(user):
+    with st.form(key="login_form"):
+
+        st.write("Welcome back, " + user[1] + "! Please log in to continue.")
+        
+        password = st.text_input("Password:", type="password")
+        submit_button = st.form_submit_button("Log In")
+        if submit_button:
+            
+            if not password:
+                st.warning("Password is required.")
+                return
+          
+            if bcrypt.hashpw(password.encode('utf-8'), user[4]) == user[3]:
+                st.session_state.user_logged_in = True
+                st.session_state.username = user[1]
+                st.session_state.full_name = user[2]
+                st.session_state.user_photo = user[5]
+                st.session_state.user_id = user[0]
+                st.success("Logged in successfully!")
+                time.sleep(2)
+                st.switch_page("app.py")
+
+            else:
+                st.error("Invalid username or password.")
+
+
+@st.dialog("Edit Profile")
 def edit_profile(user):
     with st.form(key="edit_profile_form"):
 
         c1, c2 = st.columns([1, 1.8])
         username = c2.text_input("Username:", value=user[1])
         fullname = c2.text_input("Full Name:", value=user[2])
-        profile_img = c1.image(load_user_profile_image_local(username), use_column_width=True)
+        profile_img = c1.image(user[5], use_container_width=True)
 
         new_profile_img = st.file_uploader("Profile Image", type=["png", "jpg", "jpeg", "gif"])
 
@@ -43,18 +91,20 @@ def edit_profile(user):
         st.session_state["delete_enabled_" + username] = True if enable_delete else False
 
         if new_profile_img:
-            process_image(new_profile_img, username)
+            profile_img = process_image(new_profile_img)
+        else:
+            profile_img = user[5]
 
         c1, c2, c3 = st.columns([1, 2.9, 1])
 
         if st.form_submit_button("Update"):
             st.write("Updating profile...")
-            db.update_user_profile(user[0], username, fullname)
+            db.update_user_profile(user[0], username, fullname, profile_img)
             st.success("Profile updated successfully!")
             time.sleep(2)
             st.rerun()
 
-@st.experimental_dialog("Delete Profile")
+@st.dialog("Delete Profile")
 def delete_profile(user):
     st.write("Are you sure you want to delete your profile?")
 
@@ -68,7 +118,7 @@ def delete_profile(user):
     if c3.button("No"):
         st.rerun()
 
-@st.experimental_dialog("Insert Transaction")
+@st.dialog("Insert Transaction")
 def insert_transaction():
 
     transaction_name = st.text_input("Name of the transaction:")
@@ -89,7 +139,7 @@ def insert_transaction():
         time.sleep(2)
         st.rerun()
 
-@st.experimental_dialog("Remove Transaction")
+@st.dialog("Remove Transaction")
 def remove_transaction():
 
     transactions = db.load_transactions(st.session_state.user_id)
@@ -110,7 +160,7 @@ def remove_transaction():
         time.sleep(2)
         st.rerun()
 
-@st.experimental_dialog("Edit Transaction")
+@st.dialog("Edit Transaction")
 def edit_transaction():
     transactions = db.load_transactions(st.session_state.user_id)
     transactions['date'] = pd.to_datetime(transactions['date'])

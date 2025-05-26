@@ -3,5 +3,8 @@ INSERT INTO
 VALUES (
     NULL,
     ?,
+    ?,
+    ?,
+    ?,
     ?
 )

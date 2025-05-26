@@ -4,7 +4,6 @@ from datetime import datetime as dt
 
 from src import *
 
-
 db = Database()
 
 st.set_page_config(

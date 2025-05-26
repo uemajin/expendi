@@ -1,4 +1,4 @@
-# 💸 Expendi: Manage Your Finances Effortlessly
+# Expendi: Manage Your Finances Effortlessly
 
 ## Overview
 

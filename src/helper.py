@@ -15,7 +15,7 @@ def read_query(query_name):
     with open(query_path, "r") as file:
         return file.read()
 
-def process_image(img, username):
+def process_image(img):
 
     img = Image.open(img)
 
@@ -43,14 +43,9 @@ def process_image(img, username):
     result.paste(img, mask=mask)
 
     # Save the image to a BytesIO object
-    result.save(os.path.join(os.getcwd(), 'assets', 'images', 'profiles', username + '.png'), format='PNG')
-
-def load_user_profile_image_local(username):
-    if not os.path.exists(os.path.join(os.getcwd(), 'assets', 'images', 'profiles', username + '.png')):
-        return Image.open(os.path.join(os.getcwd(), 'assets', 'images', 'profiles', 'default.png'))
-
-    image_path = os.path.join(os.getcwd(), 'assets', 'images', 'profiles', username + '.png')
-    return Image.open(image_path)
+    buffer = io.BytesIO()
+    result.save(buffer, format="PNG")
+    return buffer.getvalue()
 
 def open_image(img):
     return Image.open(img)
@@ -60,7 +55,7 @@ def save_image(img, path):
 
 def load_user_profile_image(col, image_link):
     image = requests.get(image_link).content
-    return col.image(image, use_column_width=True)
+    return col.image(image, use_container_width=True)
 
 @st.cache_data(show_spinner=False)
 def load_news(_db):
@@ -97,7 +92,7 @@ def load_about():
     c1, c2 = st.columns([1, 9])
 
     with c1:
-        load_user_profile_image(c1, "https://firebasestorage.googleapis.com/v0/b/finance-dash-8e11a.appspot.com/o/images%2Fprofiles%2FvzQF37eZgMOCYR58q1LyEKKB06w1_p.png?alt=media")
+        load_user_profile_image(c1, "https://uemajin.com/static/images/profile.png")
         social_media_icons.render()
 
     c2.write("""Hello my name is Jin and I am a Data scientist and software developer. I am currently enrolled in a MBA of Data Science and Analytics at the University of São Paulo (USP) and I am passionate about technology, specially things that can make my life easier 😅.
@@ -115,11 +110,11 @@ def load_about():
 
     c1, c2, c3 = st.columns([1, 1, 1])
 
-    c2.image("https://media4.giphy.com/media/HPLBdanIEmUVsajae2/giphy.gif?cid=6c09b952yplfwy6pw265vlc0a734zg041suj35bkz1b13xjd&ep=v1_gifs_search&rid=giphy.gif&ct=g", use_column_width=True, caption="Me trying to find a good finance management app")
+    c2.image("https://media4.giphy.com/media/HPLBdanIEmUVsajae2/giphy.gif?cid=6c09b952yplfwy6pw265vlc0a734zg041suj35bkz1b13xjd&ep=v1_gifs_search&rid=giphy.gif&ct=g", use_container_width=True, caption="Me trying to find a good finance management app")
 
     st.write("""Expendi was created to help people manage their finances in a simple and intuitive way.
             With Expendi you can insert your transactions, categorize them and visualize them in a simple and interactive way, and the most important feature: **it's free!**""")
 
     c1, c2, c3 = st.columns([1, 1, 1])
 
-    c2.image("https://media.makeameme.org/created/if-i-dont-5cc72d.jpg", caption="Julius was right", use_column_width=True)
+    c2.image("https://media.makeameme.org/created/if-i-dont-5cc72d.jpg", caption="Julius was right", use_container_width=True)
