@@ -1,19 +1,8 @@
-import io
 import streamlit as st
-
 import pandas as pd
-import numpy as np
-import plotly.express as px
-from streamlit_plotly_events import plotly_events
-
-import plotly.graph_objects as go
-from io import BytesIO
 import base64
 
 import random
-
-from packcircles import pack
-
 import streamlit.components.v1 as components
 
 import json
