@@ -48,25 +48,29 @@ def create_profile():
             st.rerun()
 
 @st.dialog("Log In")
-def login(user):
+def login():
     with st.form(key="login_form"):
 
-        st.write("Welcome back, " + user[1] + "! Please log in to continue.")
+        st.write("Welcome back! Please log in to continue.")
         
+        username = st.text_input("Username:", value=st.session_state.get("username", ""))
         password = st.text_input("Password:", type="password")
         submit_button = st.form_submit_button("Log In")
+
         if submit_button:
             
             if not password:
                 st.warning("Password is required.")
                 return
+            
+            user_check = db.get_user_data(username)
           
-            if bcrypt.hashpw(password.encode('utf-8'), user[4]) == user[3]:
+            if username == user_check['username'] and bcrypt.hashpw(password.encode('utf-8'), user_check['salt']) == user_check["password_hash"]:
                 st.session_state.user_logged_in = True
-                st.session_state.username = user[1]
-                st.session_state.full_name = user[2]
-                st.session_state.user_photo = user[5]
-                st.session_state.user_id = user[0]
+                st.session_state.username = user_check['username']
+                st.session_state.full_name = user_check['fullname']
+                st.session_state.user_photo = user_check['photo']
+                st.session_state.user_id = user_check['user_id']
                 st.success("Logged in successfully!")
                 time.sleep(2)
                 st.switch_page("app.py")

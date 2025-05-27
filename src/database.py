@@ -34,6 +34,22 @@ class Database():
             cur = conn.cursor()
             cur.execute(read_query("check_user_exists"), (username,))
             return False if cur.fetchone() is None else True
+        
+    def get_user_data(self, user_id):
+        with sqlite3.connect('db/files/data.db') as conn:
+            cur = conn.cursor()
+            cur.execute(read_query("get_user_data"), (user_id,))
+            row = cur.fetchone()
+            if row:
+                return {
+                    'user_id': row[0],
+                    'username': row[1],
+                    'fullname': row[2],
+                    'password_hash': row[3],
+                    'salt': row[4],
+                    'photo': row[5]
+                }
+            return None
 
     def create_user_profile(self, username, fullname, password, photo):
 
