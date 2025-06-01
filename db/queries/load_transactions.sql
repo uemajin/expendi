@@ -5,7 +5,8 @@ SELECT
     amount,
     date,
     category,
-    transaction_type
+    transaction_type,
+    currency
 FROM
     transactions
 WHERE

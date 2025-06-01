@@ -6,5 +6,6 @@ CREATE TABLE IF NOT EXISTS
     amount FLOAT,
     date DATE,
     category TEXT,
-    transaction_type TEXT
+    transaction_type TEXT,
+    currency TEXT
     )

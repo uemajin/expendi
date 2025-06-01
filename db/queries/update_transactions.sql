@@ -4,5 +4,6 @@ SET user_id = ?,
     amount = ?,
     date = ?,
     category = ?,
-    transaction_type = ?
+    transaction_type = ?,
+    currency = ?
 WHERE id = ?

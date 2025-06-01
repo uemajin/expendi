@@ -7,6 +7,7 @@ import bcrypt
 
 from src.helper import *
 from .database import *
+from .user import User
 
 db = Database()
 
@@ -42,7 +43,7 @@ def create_profile():
             if not profile_img:
                 profile_img = "assets/images/default.png"
 
-            db.create_user_profile(username, fullname, password, profile_img)
+            db.create_user_profile(username, fullname, password, profile_img, preferred_currency="USD")
             st.success("Profile created successfully!")
             time.sleep(2)
             st.rerun()
@@ -66,11 +67,20 @@ def login():
             user_check = db.get_user_data(username)
           
             if username == user_check['username'] and bcrypt.hashpw(password.encode('utf-8'), user_check['salt']) == user_check["password_hash"]:
+
+                session_user = User(
+                    user_id=user_check['user_id'],
+                    username=user_check['username'],
+                    fullname=user_check['fullname'],
+                    photo=user_check['photo'],
+                    password_hash=user_check['password_hash'],
+                    salt=user_check['salt'],
+                    preferred_currency=user_check['preferred_currency']
+                )
+
                 st.session_state.user_logged_in = True
-                st.session_state.username = user_check['username']
-                st.session_state.full_name = user_check['fullname']
-                st.session_state.user_photo = user_check['photo']
-                st.session_state.user_id = user_check['user_id']
+                st.session_state.user = session_user
+
                 st.success("Logged in successfully!")
                 time.sleep(2)
                 st.switch_page("app.py")
@@ -84,27 +94,62 @@ def edit_profile(user):
     with st.form(key="edit_profile_form"):
 
         c1, c2 = st.columns([1, 1.8])
-        username = c2.text_input("Username:", value=user[1])
-        fullname = c2.text_input("Full Name:", value=user[2])
-        profile_img = c1.image(user[5], use_container_width=True)
+        username = c2.text_input("Username:", value=user.username, disabled=True)
+        fullname = c2.text_input("Full Name:", value=user.fullname)
+        profile_img = c1.image(user.photo, use_container_width=True)
 
         new_profile_img = st.file_uploader("Profile Image", type=["png", "jpg", "jpeg", "gif"])
-
-        enable_delete = st.checkbox("Enable Profile Delete", value=st.session_state.get("delete_enabled_" + username, False))
-
-        st.session_state["delete_enabled_" + username] = True if enable_delete else False
 
         if new_profile_img:
             profile_img = process_image(new_profile_img)
         else:
-            profile_img = user[5]
+            profile_img = user.photo
+
+        update_password = st.text_input("New Password:", type="password")
+        confirm_password = st.text_input("Confirm New Password:", type="password")
+
+        preferred_currency = st.selectbox(
+            "Preferred Currency:",
+            options=["USD", "EUR", "GBP", "JPY", "AUD", "BRL"],
+            index=["USD", "EUR", "GBP", "JPY", "AUD", "BRL"].index(st.session_state.user.preferred_currency)
+        )
 
         c1, c2, c3 = st.columns([1, 2.9, 1])
 
         if st.form_submit_button("Update"):
+
+            if update_password:
+
+                if len(update_password) < 8:
+                    st.error("Password must be at least 8 characters long.")
+                    return
+
+                if update_password != confirm_password:
+                    st.error("Passwords do not match.")
+                    return
+                
+                salt = bcrypt.gensalt()
+                new_password = bcrypt.hashpw(update_password.encode('utf-8'), salt)
+
+            else:
+                new_password = user.password_hash
+                salt = user.salt
+
             st.write("Updating profile...")
-            db.update_user_profile(user[0], username, fullname, profile_img)
+
+            db.update_user_profile(user.user_id, username, fullname, profile_img, new_password, salt, preferred_currency)
             st.success("Profile updated successfully!")
+
+            st.session_state.user = User(
+                user_id=user.user_id,
+                username=username,
+                fullname=fullname,
+                photo=profile_img,
+                password_hash=new_password,
+                salt=salt,
+                preferred_currency=preferred_currency
+            )
+
             time.sleep(2)
             st.rerun()
 
@@ -135,9 +180,15 @@ def insert_transaction():
         category = st.selectbox("Category:", ["Food", "Transport", "Entertainment", "Rent", "Credit Card", "Health", "Education", "Others"])
         transaction_type = 'Expense'
 
+    currency = st.selectbox(
+        "Currency:",
+        options=["USD", "EUR", "GBP", "JPY", "AUD", "BRL"],
+        index=["USD", "EUR", "GBP", "JPY", "AUD", "BRL"].index(st.session_state.user.preferred_currency)
+    )
+
     if st.button("Submit"):
 
-        db.insert_transaction(st.session_state.user_id, transaction_name, amount, date, category, transaction_type)
+        db.insert_transaction(st.session_state.user.user_id, transaction_name, amount, date, category, transaction_type, currency)
 
         st.success("Transaction inserted successfully!")
         time.sleep(2)
@@ -146,7 +197,7 @@ def insert_transaction():
 @st.dialog("Remove Transaction")
 def remove_transaction():
 
-    transactions = db.load_transactions(st.session_state.user_id)
+    transactions = db.load_transactions(st.session_state.user.user_id)
     selectedTransactionsDict = st.dataframe(transactions, column_order=('date', 'name', 'category', 'type', 'amount'), on_select="rerun", selection_mode="multi-row", hide_index=True)
 
     transactionsList = selectedTransactionsDict.selection.rows
@@ -164,16 +215,16 @@ def remove_transaction():
         time.sleep(2)
         st.rerun()
 
-@st.dialog("Edit Transaction")
+@st.dialog("Edit Transaction", width="large")
 def edit_transaction():
-    transactions = db.load_transactions(st.session_state.user_id)
+    transactions = db.load_transactions(st.session_state.user.user_id)
     transactions['date'] = pd.to_datetime(transactions['date'])
 
     st.write("Edit transactions")
     updated_data = st.data_editor(
         transactions,
         hide_index=True,
-        column_order=('date', 'name', 'category', 'type', 'amount'),
+        column_order=('date', 'name', 'category', 'type', 'amount', 'currency'),
         column_config={
             "name": st.column_config.TextColumn(
                 "Transaction",
@@ -196,6 +247,11 @@ def edit_transaction():
             "type": st.column_config.TextColumn(
                 "Type",
                 help="The type of the transaction"
+            ),
+            "currency": st.column_config.SelectboxColumn(
+                "Currency",
+                help="The currency of the transaction",
+                options=["USD", "EUR", "GBP", "JPY", "AUD", "BRL"]
             )
         }
     )
@@ -224,7 +280,7 @@ def edit_transaction():
             row_dict = row.to_dict()
             row_dict['date'] = row_dict['date'].strftime('%Y-%m-%d')  # Convert Timestamp to string
 
-            db.update_transaction(st.session_state.user_id, row_dict['transaction_id'], row_dict['name'], row_dict['amount'], row_dict['date'], row_dict['category'], row_dict['type'])
+            db.update_transaction(st.session_state.user.user_id, row_dict['transaction_id'], row_dict['name'], row_dict['amount'], row_dict['date'], row_dict['category'], row_dict['type'], row_dict['currency'])
 
         st.success("Transaction(s) edited successfully!")
         time.sleep(2)

@@ -195,3 +195,5 @@ db/files/data.db
 */*/.DS_Store
 
 todo
+
+.streamlit/secrets.toml

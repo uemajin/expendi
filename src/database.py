@@ -22,10 +22,10 @@ class Database():
 
     ### User Operations
 
-    def load_all_users(self):
+    def load_user_photos(self):
         with sqlite3.connect('db/files/data.db') as conn:
             cur = conn.cursor()
-            cur.execute(read_query("load_users"))
+            cur.execute(read_query("load_user_photos"))
             rows = cur.fetchall()
             return rows
     
@@ -47,11 +47,12 @@ class Database():
                     'fullname': row[2],
                     'password_hash': row[3],
                     'salt': row[4],
-                    'photo': row[5]
+                    'photo': row[5],
+                    'preferred_currency': row[6]
                 }
             return None
 
-    def create_user_profile(self, username, fullname, password, photo):
+    def create_user_profile(self, username, fullname, password, photo, preferred_currency="USD"):
 
         photo_bytes = process_image(photo)
 
@@ -62,13 +63,13 @@ class Database():
         with sqlite3.connect('db/files/data.db') as conn:
             cur = conn.cursor()
             # Insert the user into the database
-            cur.execute(read_query('insert_users'), (username, fullname, hashed_password, salt, photo_bytes))
+            cur.execute(read_query('insert_users'), (username, fullname, hashed_password, salt, photo_bytes, preferred_currency))
             conn.commit()
 
-    def update_user_profile(self, user_id, username, fullname, photo):
+    def update_user_profile(self, user_id, username, fullname, photo, password_hash, salt, preferred_currency):
         with sqlite3.connect('db/files/data.db') as conn:
             cur = conn.cursor()
-            cur.execute(read_query('update_users'), (username, fullname, photo, user_id))
+            cur.execute(read_query('update_users'), (username, fullname, photo, password_hash, salt, preferred_currency, user_id))
             conn.commit()
 
     def delete_user_profile(self, user_id):
@@ -87,13 +88,13 @@ class Database():
             cur = conn.cursor()
             cur.execute(read_query("load_transactions"), (user_id,))
             rows = cur.fetchall()
-            return pd.DataFrame(rows, columns=['transaction_id', 'user_id', 'name', 'amount', 'date', 'category', 'type'])
+            return pd.DataFrame(rows, columns=['transaction_id', 'user_id', 'name', 'amount', 'date', 'category', 'type', 'currency'])
 
-    def insert_transaction(self, user_id, transaction_name, amount, date, category, transaction_type):
+    def insert_transaction(self, user_id, transaction_name, amount, date, category, transaction_type, currency):
         with sqlite3.connect('db/files/data.db') as conn:
             cur = conn.cursor()
             # Insert the transaction into the database
-            cur.execute(read_query("insert_transactions"), (user_id, transaction_name, amount, date, category, transaction_type))
+            cur.execute(read_query("insert_transactions"), (user_id, transaction_name, amount, date, category, transaction_type, currency))
             conn.commit()
 
     def delete_transaction(self, transaction_id):
@@ -102,8 +103,8 @@ class Database():
             cur.execute(read_query('delete_transactions'), (transaction_id,))
             conn.commit()
 
-    def update_transaction(self, user_id, transaction_id, transaction_name, amount, date, category, transaction_type):
+    def update_transaction(self, user_id, transaction_id, transaction_name, amount, date, category, transaction_type, currency):
         with sqlite3.connect('db/files/data.db') as conn:
             cur = conn.cursor()
-            cur.execute(read_query('update_transactions'), (user_id, transaction_name, amount, date, category, transaction_type, transaction_id))
+            cur.execute(read_query('update_transactions'), (user_id, transaction_name, amount, date, category, transaction_type, currency, transaction_id))
             conn.commit()

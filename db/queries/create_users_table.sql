@@ -5,5 +5,6 @@ CREATE TABLE IF NOT EXISTS
         fullname TEXT NOT NULL,
         password_hs TEXT NOT NULL,
         salt_pw TEXT NOT NULL,
-        photo BLOB NOT NULL
+        photo BLOB NOT NULL,
+        preferred_currency TEXT NOT NULL
     )

@@ -4,7 +4,8 @@ SELECT
     fullname,
     password_hs,
     salt_pw,
-    photo
+    photo,
+    preferred_currency
 FROM
     users
 WHERE

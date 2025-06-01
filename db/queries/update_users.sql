@@ -3,6 +3,9 @@ UPDATE
 SET
     username = ?,
     fullname = ?,
-    photo = ?
+    photo = ?,
+    password_hs = ?,
+    salt_pw = ?,
+    preferred_currency = ?
 WHERE
     id = ?

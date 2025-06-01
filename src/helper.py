@@ -3,6 +3,29 @@ import streamlit as st
 from PIL import Image, ImageDraw, ImageOps
 from st_social_media_links import SocialMediaIcons
 
+def currency_format(value, preffered_currency):
+    """
+    Format a numeric value as a currency string.
+    
+    Args:
+        value (float or str): The numeric value to format.
+        currency_symbol (str): The symbol to prepend to the formatted value.
+        
+    Returns:
+        str: The formatted currency string.
+    """
+
+    currencies = {
+        "USD": "$", 
+        "EUR": "€", 
+        "GBP": "£", 
+        "JPY": "¥", 
+        "AUD": "A$", 
+        "BRL": "R$"
+    }
+
+    return f"{value:,.2f}{currencies[preffered_currency]}"
+
 def bgcolor_positive_or_negative(value):
     if isinstance(value, str):
         value = float(value.replace(',', ''))
